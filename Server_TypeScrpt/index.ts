@@ -97,6 +97,16 @@ app.post('/poll', (req: Request, res: Response) => {            //??  guarda con
   res.send('poll');
 });
 
+app.delete('/stream_delete', (req: Request, res: Response) => {               
+  console.log(req.body)                                 
+  res.send('stream_delete');
+});
+
+app.post('/register', (req: Request, res: Response) => {            //??  guarda configuration.json
+  console.log(req.body)                                 
+  res.send('register');
+});
+
 app.listen(port, () => {
   console.log(`Server is Fire at http://localhost:${port}`);
 });
