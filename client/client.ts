@@ -51,6 +51,7 @@ export class Client
   public auth;
   public verify;
   public endpoints;
+  public state;
 
 
   public constructor(transmitter_hostname: string, audience: string, bearer: string, verify: boolean = true)
@@ -59,6 +60,7 @@ export class Client
     this.audience = audience;
     this.auth = bearer;
     this.verify = verify;
+    this.state = "enable";
     this.endpoints = {
 
       configuration_endpoint:
@@ -86,34 +88,27 @@ export class Client
     
   }
 
-  /*public async get_endpoints(endpoint: string) //get
-  {
-    const { data, status } = await axios.get<List_of_endpoints>(
-      endpoint,
-      {
-        headers:
-        {
-          'Authorization': `Bearer ${this.auth}`
-        }
-      }
-    );
-
-    this.endpoints = (data as List_of_endpoints); 
-
-    console.log(status);
-  }*/
-
   public async configure_stream() //post
   {
     const { data, status } = await axios.post<Client_config>(
-      this.endpoints.configuration_endpoint,      //controlla sia l'endpoint giusto
+      this.endpoints.configuration_endpoint,      
       {
-        delivery:{
-          method: "https://schemas.openid.net/secevent/risc/delivery-method/push",
-          endpoint_url: "string",
-        },
-        events_requested: "https://schemas.openid.net/secevent/risc/event-type/credential-compromise",
-      },
+        "sub": "1234567890",
+        "iss": "sevrer",
+        "aud": [
+        "http://receiver.example.com/web",
+        "http://receiver.example.com/mobile"
+      ],
+      "delivery": {
+        "delivery_method":
+          "https://schemas.openid.net/secevent/risc/delivery-method/push",
+          "url": "http://localhost:3030/push"},
+      "events_requested": [
+        "https://schemas.openid.net/secevent/risc/event-type/account-credential-change-required",
+        "https://schemas.openid.net/secevent/risc/event-type/account-disabled",
+        "https://schemas.openid.net/secevent/risc/event-type/recovery_information_changed"
+      ]
+    },
       {
         headers: {
           'Content-Type': 'application/json',
@@ -124,6 +119,20 @@ export class Client
       },
     );
     console.log(status);
+  }
+
+
+  public async delete_configuration() //delete
+  {
+    const { data, status } = await axios.delete<Client_config>(
+      this.endpoints.configuration_endpoint,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'Authorization': `Bearer ${this.auth}`
+        }}
+    );
   }
 
   public async add_subject(subject:JSON) //post
@@ -163,7 +172,14 @@ export class Client
   {
     const { data, status } = await axios.post(
         this.endpoints.verification_endpoint,
-           
+        {
+          "iss": "sevrer",
+          "aud": [
+          "http://receiver.example.com/web",
+          "http://receiver.example.com/mobile"
+          ],
+          "state": this.state
+      },
         {
           headers: {
             'Content-Type': 'application/json',//da mettere bearer token
@@ -175,53 +191,68 @@ export class Client
       console.log(status,data);
   }
 
-  public async get_status(endpoint: string) //get
+  public async update_status() //post
   {
-    const { data, status } = await axios.get(
-      this.endpoints.status_endpoint
+    const { data, status } = await axios.post(
+      this.endpoints.status_endpoint,
+      {
+        "status": "disabled",
+        
+        "subject": {
+          "format": "email",
+          "email": "foo@example2.com"
+        },
+        "verified": true
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',//da mettere bearer token
+          Accept: 'application/json',
+          'Authorization': `Bearer ${this.auth}`
+        },
+      }
+      
     );
     
     console.log(data);
   }
 
-  public async poll(endpoint:string){
-    const { data, status } = await axios.post<string>(
-      endpoint,
-       {
-        'maxevents': 5,
-        'returnImmediately': true,
-       } , //cambia in json da inviare
+
+  public async get_status() //get
+  {
+    const { data, status } = await axios.get(
+    this.endpoints.status_endpoint,
+    {
+      headers:
       {
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          'Authorization': ''
-        },
-      },
-    );
-    console.log(status,data);
+        'authorization': `Bearer ${this.auth}`
+      }
+      
+    }
+  );
   }
+  
+
 
   public async inviaRichiestaAlServer(endpoint:string) {
     let tentativi = 0;
 
     while (true) {
       try {
-        
         const { data, status } = await axios.get<List_of_endpoints>(
           endpoint,
           {
             headers:
             {
-              'Authorization': `Bearer ${this.auth}`
+              'authorization': `Bearer ${this.auth}`
             }
+            
           }
         );
 
         // Se la risposta è positiva, interrompi il loop
         if (status === 200) {
           this.endpoints = (data as List_of_endpoints); 
-          console.log(this.endpoints.add_subject_endpoint);
           console.log('Il server ha risposto correttamente:', status);
           break;
         }
@@ -245,9 +276,8 @@ export class Client
 
 export function pushEvents(req:Request) {
 
-  req.body.forEach(function (value: any) {
-    console.log(value);
-  })
+  console.log(req.body);
 
 }
+
 
