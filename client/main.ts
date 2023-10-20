@@ -2,8 +2,8 @@ import bodyParser from "body-parser";
 import { pushEvents } from "./client";
 import express from "express";
 import {Client} from "./client";
-import * as subject from "./subject.json";
-
+import * as subject1 from "./subject1.json";
+import * as subject2 from "./subject2.json";
 const port = 3030;
 let app;
 
@@ -16,61 +16,31 @@ app.post('/push',(req, res) => {
 });
     
 const first_endpoint = "http://localhost:3000/.well-known/sse-configuration";
-let bearer:string = "";
+let bearer:string = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6ImVubmlvLm1vbmNoZWxhdG9Ac3R1ZGVudGkudW5pdG4uaXQiLCJpYXQiOjE1MTYyMzkwMjJ9.jVo8R2f8PdrXfqd4NmVb4dw_rfA02BikG3zIFXavTRU";
 
 app.listen(port, async () => {
   console.log(`Server is Fire at http://localhost:${port}`);
 
-  const url = 'https://test.monokee.com/6627a356-c838-4ad9-8ff3-e2924b204280/oauth2/651b923d-4daa-4f00-8875-3b89cbb8d421/token';
-  const data = new URLSearchParams();
-  data.append('grant_type', 'client_credentials');
-
-  const headers = {
-    'Content-Type': 'application/x-www-form-urlencoded',
-    'Authorization': 'Basic c2hhcmVkc2lnbmFscy1yZXNvdXJjZS1zZXJ2ZXI6c2hhcmVkc2lnbmFscy1yZXNvdXJjZS1zZXJ2ZXI='
-  };
-
-  async function getToken(): Promise<void> {
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: headers,
-        body: data
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        bearer = data.access_token;
-        console.log('Access Token Server:', data.access_token);
-      } else {
-        console.error('Error during token request:', response.statusText);
-      }
-    } catch (error) {
-      console.error('Error during token request:', error);
-    }
-  }
-  getToken();
+  
 });
-
-let client = new Client("transmitter_hostname", "audience", bearer);  //sistema i parametri
-
 
 
 (async () => { 
 
-
+let client = new Client("transmitter_hostname", "audience", bearer);  //sistema i parametri
 await client.inviaRichiestaAlServer(first_endpoint); //passaggio di endpoints
 
+await client.configure_stream(); //configura stream
+await client.delete_configuration(); //elimina stream
+await client.configure_stream(); //riconfigura stream
+client.request_verification(); //scambio di un evento di prova
 
+client.add_subject(JSON.parse(JSON.stringify(subject1)));//aggiunta di un subject
 
-client.add_subject(JSON.parse('{"ciao":"ciao"}'));
+await client.add_subject(JSON.parse(JSON.stringify(subject2)));//aggiunta e rimozione di un subject
+client.remove_subject(JSON.parse(JSON.stringify(subject2)));
 
-/*client.configure_stream(); //configura stream
-client.request_verification(); //scambio di un evnto di prova
-for (let i = 0; i < subject.length; i++) {
-    client.add_subject(client.endpoints.add_subject_endpoint,JSON.parse(JSON.stringify(subject[i])));    //aggiunta dei vari subject
-  }
-client.remove_subject(client.endpoints.remove_subject_endpoint, JSON.parse('{"format": "email", "email": "salve"}'));
-client.poll(client.endpoints.delivery_methods_supported[1]);
-*/
+client.update_status();//update e get dello status
+client.get_status();
+
 })();
