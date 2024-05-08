@@ -1,8 +1,3 @@
-import axios from "axios";
-import { json } from "body-parser";
-import { UUID } from "mongodb";
-import { Request, Response } from 'express';import { publicDecrypt } from "crypto";
-;
 
 type Stato = "enabled"|"disabled"|"paused";
 
@@ -87,115 +82,125 @@ export class Client
     };
     
   }
-
+  
   public async configure_stream() //post
   {
-    const { data, status } = await axios.post<Client_config>(
-      this.endpoints.configuration_endpoint,      
-      {
-        "sub": "1234567890",
-        "iss": "sevrer",
-        "aud": [
-        "http://receiver.example.com/web",
-        "http://receiver.example.com/mobile"
-      ],
-      "delivery": {
-        "delivery_method":
-          "https://schemas.openid.net/secevent/risc/delivery-method/push",
-          "url": "http://localhost:3030/push"},
-      "events_requested": [
-        "https://schemas.openid.net/secevent/risc/event-type/account-credential-change-required",
-        "https://schemas.openid.net/secevent/risc/event-type/account-disabled",
-        "https://schemas.openid.net/secevent/risc/event-type/recovery_information_changed"
-      ]
+    fetch(this.endpoints.configuration_endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      'Authorization': `Bearer ${this.auth}`
     },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          'Authorization': `Bearer ${this.auth}`
-        },
-        
-      },
-    );
-    console.log(status);
+    body: JSON.stringify({
+      "sub": "1234567890",
+      "iss": "sevrer",
+      "aud": [
+      "http://receiver.example.com/web",
+      "http://receiver.example.com/mobile"
+    ],
+    "delivery": {
+      "delivery_method":
+        "https://schemas.openid.net/secevent/risc/delivery-method/push",
+        "url": "http://localhost:3030/push"},
+    "events_requested": [
+      "https://schemas.openid.net/secevent/caep/event-type/session-revoked",
+      "https://schemas.openid.net/secevent/caep/event-type/credential-change",
+    ]
+  }) // Dati da inviare nel corpo della richiesta
+  })
+  .then(response => response.text())
+  .then(data => console.log(data))
+  .catch(error => console.error('Si è verificato un errore:', error));
+  
   }
 
 
   public async delete_configuration() //delete
   {
-    const { data, status } = await axios.delete<Client_config>(
-      this.endpoints.configuration_endpoint,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          'Authorization': `Bearer ${this.auth}`
-        }}
-    );
+    fetch(this.endpoints.configuration_endpoint, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'Authorization': `Bearer ${this.auth}`
+      },
+      body:null // Dati da inviare nel corpo della richiesta
+    })
+    .then(response => response.text())
+    .then(data => console.log(data))
+    .catch(error => console.error('Si è verificato un errore:', error));
+    
   }
 
-  public async add_subject(subject:JSON) //post
+  public async add_subject(subject:BodyInit) //post
   {
-    const { data, status } = await axios.post<JSON>(          
-        this.endpoints.add_subject_endpoint,
-        subject,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            'Authorization': `Bearer ${this.auth}`
-          },
-        }
-      );
-      console.log(status);
-
+    fetch(this.endpoints.add_subject_endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'Authorization': `Bearer ${this.auth}`
+      },
+      body: subject // Dati da inviare nel corpo della richiesta
+    })
+    .then(response => response.text())
+    .then(data => console.log(data))
+    .catch(error => console.error('Si è verificato un errore:', error));
+    
   }
 
-  public async remove_subject(subject:JSON) //post
+  public async remove_subject(subject:BodyInit) //post
   {
-    const { data, status } = await axios.post<JSON>(          
-        this.endpoints.remove_subject_endpoint,
-        subject,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            'Authorization': `Bearer ${this.auth}`
-          },
-        },
-      );
-      console.log(status);
+    fetch(this.endpoints.remove_subject_endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'Authorization': `Bearer ${this.auth}`
+      },
+      body: subject // Dati da inviare nel corpo della richiesta
+    })
+    .then(response => response.text())
+    .then(data => console.log(data))
+    .catch(error => console.error('Si è verificato un errore:', error));
+    
   }
 
   public async request_verification() //post
   {
-    const { data, status } = await axios.post(
-        this.endpoints.verification_endpoint,
-        {
-          "iss": "sevrer",
-          "aud": [
-          "http://receiver.example.com/web",
-          "http://receiver.example.com/mobile"
-          ],
-          "state": this.state
+    fetch(this.endpoints.verification_endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',//da mettere bearer token
+        Accept: 'application/json',
+        'Authorization': `Bearer ${this.auth}`
       },
-        {
-          headers: {
-            'Content-Type': 'application/json',//da mettere bearer token
-            Accept: 'application/json',
-            'Authorization': `Bearer ${this.auth}`
-          },
-        },
-      );
-      console.log(status,data);
+      body: JSON.stringify({
+        "iss": "sevrer",
+        "aud": [
+        "http://receiver.example.com/web",
+        "http://receiver.example.com/mobile"
+        ],
+        "state": this.state
+    }) // Dati da inviare nel corpo della richiesta
+    })
+    .then(response => response.text())
+    .then(data => console.log(data))
+    .catch(error => console.error('Si è verificato un errore:', error));
+    
   }
 
   public async update_status() //post
   {
-    const { data, status } = await axios.post(
-      this.endpoints.status_endpoint,
-      {
+    fetch(this.endpoints.status_endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',//da mettere bearer token
+        Accept: 'application/json',
+        'Authorization': `Bearer ${this.auth}`
+      },
+      body: JSON.stringify({
         "status": "disabled",
         
         "subject": {
@@ -203,33 +208,29 @@ export class Client
           "email": "foo@example2.com"
         },
         "verified": true
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',//da mettere bearer token
-          Accept: 'application/json',
-          'Authorization': `Bearer ${this.auth}`
-        },
-      }
-      
-    );
+      }) // Dati da inviare nel corpo della richiesta
+    })
+    .then(response => response.text())
+    .then(data => console.log(data))
+    .catch(error => console.error('Si è verificato un errore:', error));
     
-    console.log(data);
   }
 
 
   public async get_status() //get
   {
-    const { data, status } = await axios.get(
-    this.endpoints.status_endpoint,
-    {
+    fetch(this.endpoints.status_endpoint, {
+      method: 'GET',
       headers:
       {
         'authorization': `Bearer ${this.auth}`
-      }
-      
-    }
-  );
+      },
+      body: null // Dati da inviare nel corpo della richiesta
+    })
+    .then(response => response.text())
+    .then(data => console.log(data))
+    .catch(error => console.error('Si è verificato un errore:', error));
+    
   }
   
 
@@ -237,47 +238,23 @@ export class Client
   public async inviaRichiestaAlServer(endpoint:string) {
     let tentativi = 0;
 
-    while (true) {
-      try {
-        const { data, status } = await axios.get<List_of_endpoints>(
-          endpoint,
-          {
-            headers:
+        fetch(endpoint, {
+          method: 'GET',
+          headers:
             {
               'authorization': `Bearer ${this.auth}`
-            }
-            
-          }
-        );
-
-        // Se la risposta è positiva, interrompi il loop
-        if (status === 200) {
-          this.endpoints = (data as List_of_endpoints); 
-          console.log('Il server ha risposto correttamente:', status);
-          break;
-        }
-      } catch (error) {
-        if (error instanceof Error)
-        // Gestisci gli errori, ad esempio timeout della richiesta
-        console.error('Errore durante la richiesta:', error.message);
-      }
-
-      // Incrementa il numero di tentativi
-      tentativi++;
+            },
+          body: null // Dati da inviare nel corpo della richiesta
+        })
+        .then(response => response.text())
+        .then(data => console.log(data))
+        .catch(error => console.error('Si è verificato un errore:', error));
+        
 
       // Attendi un po' prima di fare il prossimo tentativo (ad esempio, 1 secondo)
       await new Promise(resolve => setTimeout(resolve, 10000));
 
       console.log(`Tentativo ${tentativi} di contattare il server...`);
-    }
     
-    }
+  }
 }
-
-export function pushEvents(req:Request) {
-
-  console.log(req.body);
-
-}
-
-
